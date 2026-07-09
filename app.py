@@ -5,31 +5,31 @@ from datetime import datetime
 st.set_page_config(page_title="Serin Elektrik", layout="centered")
 st.title("⚡ Serin Elektrik Takip")
 
-# Projeler listesi
-projeler = ["Seis Yapı", "Konut Projesi", "Diğer"]
+# Oturum yönetimi (Verilerin silinmemesi için)
+if 'kayitlar' not in st.session_state:
+    st.session_state.kayitlar = pd.DataFrame(columns=["Proje", "Malzeme", "Miktar", "Birim", "Tarih"])
 
-# 1. Proje Seçimi veya Yeni Proje Ekleme
-secim_turu = st.radio("İşlem Türü:", ["Kayıtlı Proje Seç", "Yeni Proje Ekle"])
-
-if secim_turu == "Kayıtlı Proje Seç":
-    secilen_proje = st.selectbox("Proje Seç:", projeler)
+# 1. Proje Seçimi
+secim_turu = st.radio("İşlem:", ["Kayıtlı Proje", "Yeni Proje"])
+if secim_turu == "Kayıtlı Proje":
+    secilen_proje = st.selectbox("Proje:", ["Seis Yapı", "Konut Projesi"])
 else:
-    secilen_proje = st.text_input("Yeni Proje Adını Yaz:")
+    secilen_proje = st.text_input("Proje Adı:")
 
-# 2. Malzeme ve Miktar
-malzeme = st.text_input("Malzeme Adı")
-miktar = st.number_input("Miktar", min_value=0)
+# 2. Malzeme, Miktar ve BİRİM
+malzeme = st.text_input("Malzeme Adı:")
+col1, col2 = st.columns(2)
+with col1:
+    miktar = st.number_input("Miktar:", min_value=0.0)
+with col2:
+    birim = st.selectbox("Birim:", ["Adet", "Metre", "Kg", "Boy"])
 
+# 3. Kayıt Etme
 if st.button("Kaydet"):
-    if secilen_proje and malzeme:
-        st.success(f"✅ {secilen_proje} için {malzeme} kaydedildi!")
-        # Burada tabloyu gösteriyoruz
-        df = pd.DataFrame({
-            "Proje": [secilen_proje],
-            "Malzeme": [malzeme],
-            "Miktar": [miktar],
-            "Tarih": [datetime.now().strftime("%d-%m-%Y %H:%M")]
-        })
-        st.table(df)
-    else:
-        st.error("Lütfen tüm alanları doldur!")
+    yeni_satir = {"Proje": secilen_proje, "Malzeme": malzeme, "Miktar": miktar, "Birim": birim, "Tarih": datetime.now().strftime("%H:%M")}
+    st.session_state.kayitlar = pd.concat([st.session_state.kayitlar, pd.DataFrame([yeni_satir])], ignore_index=True)
+    st.success(f"✅ {malzeme} eklendi!")
+
+# 4. Tabloyu sürekli göster
+st.subheader("Eklenen Malzemeler")
+st.table(st.session_state.kayitlar)
