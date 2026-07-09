@@ -5,29 +5,31 @@ from datetime import datetime
 st.set_page_config(page_title="Serin Elektrik", layout="centered")
 st.title("⚡ Serin Elektrik Takip")
 
-# Projeler
+# Projeler listesi
 projeler = ["Seis Yapı", "Konut Projesi", "Diğer"]
-secilen_proje = st.selectbox("Proje Seç:", projeler)
 
+# 1. Proje Seçimi veya Yeni Proje Ekleme
+secim_turu = st.radio("İşlem Türü:", ["Kayıtlı Proje Seç", "Yeni Proje Ekle"])
+
+if secim_turu == "Kayıtlı Proje Seç":
+    secilen_proje = st.selectbox("Proje Seç:", projeler)
+else:
+    secilen_proje = st.text_input("Yeni Proje Adını Yaz:")
+
+# 2. Malzeme ve Miktar
 malzeme = st.text_input("Malzeme Adı")
 miktar = st.number_input("Miktar", min_value=0)
 
 if st.button("Kaydet"):
-    yeni_veri = {
-        "Proje": [secilen_proje],
-        "Malzeme": [malzeme],
-        "Miktar": [miktar],
-        "Tarih": [datetime.now().strftime("%d-%m-%Y %H:%M")]
-    }
-    
-    # Veriyi bir tabloya dönüştür
-    df_yeni = pd.DataFrame(yeni_veri)
-    
-    # Ekrana başarı mesajı ver
-    st.success(f"{malzeme} sisteme kaydedildi!")
-    st.table(df_yeni)
-    
-    # NOT: Google Sheets'e doğrudan yazmak için bir "Service Account" gerekir.
-    # Şimdilik baban uygulamayı kullansın, verileri ekranında görsün.
-    # Ben sana verileri tek tuşla Google Sheet'ine "yapıştırabileceğin" 
-    # en basit yöntemi 1 dakikada anlatayım mı?
+    if secilen_proje and malzeme:
+        st.success(f"✅ {secilen_proje} için {malzeme} kaydedildi!")
+        # Burada tabloyu gösteriyoruz
+        df = pd.DataFrame({
+            "Proje": [secilen_proje],
+            "Malzeme": [malzeme],
+            "Miktar": [miktar],
+            "Tarih": [datetime.now().strftime("%d-%m-%Y %H:%M")]
+        })
+        st.table(df)
+    else:
+        st.error("Lütfen tüm alanları doldur!")
