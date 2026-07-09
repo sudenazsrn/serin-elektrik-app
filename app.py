@@ -1,32 +1,30 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="Serin Elektrik", layout="centered")
 st.title("⚡ Serin Elektrik Takip")
 
-# Google Sheets Bağlantısı
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Veri tabanı yerine bir CSV dosyası gibi çalıştıralım
+if "veri" not in st.session_state:
+    st.session_state.veri = pd.DataFrame(columns=["Proje", "Malzeme", "Miktar", "Birim", "Tarih"])
 
-# 1. Proje Seçimi
-proje_secim = st.radio("İşlem:", ["Var olan projeye git", "Yeni proje aç"])
-if proje_secim == "Var olan projeye git":
-    # Google Sheet'ten proje listesini çek
-    df = conn.read(spreadsheet="1_I_q0qgwqRRqSLDY60meNuSicaKLp1cjn1j3VKbx4EM", usecols=[0])
-    secilen_proje = st.selectbox("Proje Seç:", df["Proje"].unique())
-else:
-    secilen_proje = st.text_input("Yeni Proje Adı:")
-
-# 2. Malzeme Girişi
-malzeme = st.text_input("Malzeme Adı:")
+# 1. Proje ve Malzeme
+proje = st.text_input("Proje Adı:")
+malzeme = st.text_input("Malzeme:")
 c1, c2 = st.columns(2)
 miktar = c1.number_input("Miktar:", min_value=0.0)
 birim = c2.selectbox("Birim:", ["Adet", "Metre", "Kg", "Boy"])
 
-# 3. Kaydet
+# 2. Kaydet
 if st.button("Kaydet"):
-    yeni_satir = pd.DataFrame([[secilen_proje, malzeme, miktar, birim, datetime.now().strftime("%d-%m-%Y %H:%M")]], 
-                               columns=["Proje", "Malzeme", "Miktar", "Birim", "Tarih"])
-    conn.append(spreadsheet="1_I_q0qgwqRRqSLDY60meNuSicaKLp1cjn1j3VKbx4EM", data=yeni_satir)
-    st.success("✅ Veri Google Tabloya gönderildi!")
+    yeni_satir = {"Proje": proje, "Malzeme": malzeme, "Miktar": miktar, "Birim": birim, "Tarih": datetime.now().strftime("%d-%m-%Y %H:%M")}
+    st.session_state.veri = pd.concat([st.session_state.veri, pd.DataFrame([yeni_satir])], ignore_index=True)
+    st.success("✅ Kaydedildi!")
+
+# 3. Tabloyu Göster
+st.table(st.session_state.veri)
+
+# Baban için İndirme Tuşu
+csv = st.session_state.veri.to_csv(index=False).encode('utf-8')
+st.download_button("📥 Verileri İndir (Excel'e at)", csv, "veriler.csv", "text/csv")
